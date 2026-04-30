@@ -176,7 +176,7 @@ $kategori = $pdo->query("SELECT * FROM kategori ORDER BY nama")->fetchAll();
       <div class="section-title">Produk terlaris</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Produk</th><th>Terjual</th><th>Pendapatan</th></tr></thead>
+          <thead><tr><th>#</th><th>Produk</th><th>Satuan</th><th>Terjual</th><th>Pendapatan</th></tr></thead>
           <tbody id="tabelTerlaris"><tr class="empty-row"><td colspan="4">Belum ada data</td></tr></tbody>
         </table>
       </div>
@@ -250,7 +250,7 @@ async function loadLaporan() {
   const sampai = document.getElementById('fSampai').value;
   if (!dari || !sampai) { alert('Pilih rentang tanggal'); return; }
 
-  const res  = await fetch(`/api/laporan.php?dari=${dari}&sampai=${sampai}`);
+  const res  = await fetch(`api/laporan.php?dari=${dari}&sampai=${sampai}`);
   laporanData = await res.json();
 
   renderMetrik(laporanData.ringkasan);
@@ -260,7 +260,7 @@ async function loadLaporan() {
 }
 
 async function loadStok() {
-  const res  = await fetch('/api/produk.php');
+  const res  = await fetch('api/produk.php');
   const data = await res.json();
   const menipis = data.filter(p => p.stok <= (p.stok_minimum || 5));
   const tbody = document.getElementById('tabelStok');
@@ -274,8 +274,8 @@ async function loadStok() {
       : '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#FAEEDA;color:#633806;font-weight:500;">Menipis</span>';
     return `<tr>
       <td style="font-weight:500;">${p.nama}</td>
-      <td>${p.stok}</td>
-      <td>${p.stok_minimum || 5}</td>
+      <td>${Math.round(p.stok)}</td>
+      <td>${Math.round(p.stok_minimum || 5)}</td>
       <td>${badge}</td>
     </tr>`;
   }).join('');
@@ -300,7 +300,8 @@ function renderTerlaris(data) {
     <tr>
       <td><span class="rank-num ${i < 3 ? 'top' : ''}">${i + 1}</span></td>
       <td>${p.nama_produk}</td>
-      <td>${p.total_qty}</td>
+      <td>${p.nama_satuan}</td>
+      <td>${Math.round(p.total_qty)}</td>
       <td>${fmt(p.total_pendapatan)}</td>
     </tr>`).join('');
 }
@@ -318,12 +319,18 @@ function renderTransaksi(data) {
       <td style="font-weight:500;">${fmt(t.total)}</td>
       <td>${fmt(t.bayar)}</td>
       <td>${fmt(t.kembalian)}</td>
-      <td><button class="btn-detail" onclick="lihatDetail(${t.id})">Detail</button></td>
+      <td style="display:flex;gap:5px;">
+        <button class="btn-detail" onclick="lihatDetail(${t.id})">Detail</button>
+        <a class="btn-detail" href="nota.php?kode=${encodeURIComponent(t.kode)}"
+           style="text-decoration:none;display:inline-flex;align-items:center;gap:3px;">
+          🖨️ Nota
+        </a>
+      </td>
     </tr>`).join('');
 }
 
 async function lihatDetail(id) {
-  const res  = await fetch(`/api/laporan.php?detail=${id}`);
+  const res  = await fetch(`api/laporan.php?detail=${id}`);
   const data = await res.json();
   if (!data || data.error) return;
 
@@ -336,7 +343,7 @@ async function lihatDetail(id) {
     <tr>
       <td>${i.nama_produk}</td>
       <td>${i.nama_satuan}</td>
-      <td>${i.qty}</td>
+      <td>${Math.round(i.qty)}</td>
       <td>${fmt(i.harga)}</td>
       <td>${fmt(i.subtotal)}</td>
     </tr>`).join('');

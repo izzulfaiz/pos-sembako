@@ -232,7 +232,7 @@ $user = currentUser();
 <body>
 
 <nav class="navbar">
-  <div class="navbar-brand">Toko Sembako</div>
+  <div class="navbar-brand">Toko Sembako Mujiati</div>
   <div class="navbar-right">
     <span class="navbar-user"><?= htmlspecialchars($user['nama']) ?></span>
     <span class="navbar-role <?= $user['role'] === 'admin' ? 'admin' : '' ?>">
@@ -309,7 +309,7 @@ let selectedSatuan = null;
 const fmt = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 
 async function loadProduk() {
-  const res = await fetch('/api/produk.php');
+  const res = await fetch('api/produk.php');
   produkData = await res.json();
   renderGrid(produkData);
 }
@@ -481,7 +481,7 @@ document.getElementById('btnBayar').addEventListener('click', async () => {
     kembalian: bayar - t,
   };
 
-  const res = await fetch('/api/transaksi.php', {
+  const res = await fetch('api/transaksi.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

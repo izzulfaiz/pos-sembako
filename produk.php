@@ -174,7 +174,7 @@ $satuan_list = ['pcs','kg','gram','liter','ml','dus','karung','lusin','roll','pa
 <body>
 
 <nav class="navbar">
-  <div class="navbar-brand">Toko Sembako</div>
+  <div class="navbar-brand">Toko Sembako Mujiati</div>
   <div class="navbar-right">
     <a href="index.php"   class="nav-link">Kasir</a>
     <a href="produk.php"  class="nav-link active">Produk</a>
@@ -185,7 +185,7 @@ $satuan_list = ['pcs','kg','gram','liter','ml','dus','karung','lusin','roll','pa
 
 <div class="container">
   <div class="topbar">
-    <div class="page-title">Manajemen produk</div>
+    <div class="page-title">Manajemen Produk</div>
     <button class="btn-primary" onclick="openModal()">+ Tambah produk</button>
   </div>
 
@@ -287,7 +287,7 @@ $satuan_list = ['pcs','kg','gram','liter','ml','dus','karung','lusin','roll','pa
 <!-- Satuan list dari PHP -->
 <script>
 const SATUAN_LIST = <?= json_encode($satuan_list) ?>;
-const fmt = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+const fmt = n => 'Rp ' + Math.round(parseFloat(n)).toLocaleString('id-ID');
 let allProduk = [];
 
 async function loadProduk() {
@@ -315,7 +315,7 @@ function renderTable(data) {
     return `<tr>
       <td style="font-weight:500;">${p.nama}</td>
       <td>${p.kategori}</td>
-      <td>${p.stok}</td>
+      <td>${Math.round(p.stok)}</td>
       <td>${satuanInfo}</td>
       <td><span class="badge ${stokClass}">${stokLabel}</span></td>
       <td>
@@ -359,16 +359,24 @@ function tambahBarisSatuan(s = null, index = null) {
       ${buatOptionSatuan(s ? s.nama_satuan : '')}
     </select>
     <input class="form-control s-konv" type="number" min="0.01" step="0.01"
-           placeholder="1" value="${s ? s.konversi : (isFirst ? 1 : '')}"
+           placeholder="1" value="${s ? Math.round(s.konversi) : (isFirst ? 1 : '')}"
            ${isFirst ? 'readonly' : ''}>
     <input class="form-control s-hbeli" type="number" min="0" placeholder="0"
-           value="${s ? s.harga_beli : ''}">
+           value="${s ? Math.round(s.harga_beli).toLocaleString('id-ID') : ''}">
     <input class="form-control s-hjual" type="number" min="0" placeholder="0"
-           value="${s ? s.harga_jual : ''}">
+           value="${s ? Math.round(s.harga_jual).toLocaleString('id-ID') : ''}">
     <button class="btn-rm-satuan" onclick="hapusBarisSatuan(this)"
             ${isFirst ? 'disabled' : ''}>&times;</button>
   `;
   rows.appendChild(div);
+  div.querySelectorAll('.s-hbeli, .s-hjual').forEach(input => {
+  input.addEventListener('input', function() {
+    let angka = this.value.replace(/\./g, '');
+    if (!isNaN(angka) && angka !== '') {
+      this.value = parseInt(angka).toLocaleString('id-ID');
+    }
+  });
+});
 }
 
 function hapusBarisSatuan(btn) {
@@ -393,8 +401,8 @@ function openModal(data = null) {
   document.getElementById('editId').value    = data ? data.id : '';
   document.getElementById('fNama').value     = data ? data.nama : '';
   document.getElementById('fKategori').value = data ? data.kategori_id : '';
-  document.getElementById('fStok').value     = data ? data.stok : '';
-  document.getElementById('fStokMin').value  = data ? (data.stok_minimum || 5) : '5';
+  document.getElementById('fStok').value     = data ? Math.round(data.stok) : '';
+  document.getElementById('fStokMin').value  = data ? Math.round(data.stok_minimum || 5) : '5';
   document.getElementById('modalTitle').textContent = data ? 'Edit produk' : 'Tambah produk';
   document.getElementById('satuanRows').innerHTML = '';
 
@@ -414,8 +422,8 @@ async function simpanProduk() {
   const id      = document.getElementById('editId').value;
   const nama    = document.getElementById('fNama').value.trim();
   const katId   = document.getElementById('fKategori').value;
-  const stok    = document.getElementById('fStok').value;
-  const stokMin = document.getElementById('fStokMin').value;
+  const stok    = Math.round(document.getElementById('fStok').value);
+  const stokMin = Math.round(document.getElementById('fStokMin').value);
 
   if (!nama) { showNotif('Nama produk wajib diisi'); return; }
 
@@ -424,8 +432,8 @@ async function simpanProduk() {
   for (const r of rows) {
     const nm = r.querySelector('.s-nama').value;
     const kv = r.querySelector('.s-konv').value;
-    const hb = r.querySelector('.s-hbeli').value;
-    const hj = r.querySelector('.s-hjual').value;
+    const hb = r.querySelector('.s-hbeli').value.replace(/\./g, '');
+const hj = r.querySelector('.s-hjual').value.replace(/\./g, '');
     if (!nm || !kv || !hj) { showNotif('Isi semua kolom satuan'); return; }
     satuan.push({
       id: r.dataset.satuanId || null,
@@ -436,7 +444,8 @@ async function simpanProduk() {
     });
   }
   if (!satuan.length) { showNotif('Minimal 1 satuan diperlukan'); return; }
-
+const duplikat = allProduk.find(p => p.nama.toLowerCase() === nama.toLowerCase() && String(p.id) !== String(id));
+if (duplikat) { showNotif('Produk "' + nama + '" sudah ada'); return; }
   const res = await fetch('api/produk.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

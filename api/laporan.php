@@ -54,12 +54,13 @@ $ringkasan['total_modal'] = $modal['total_modal'];
 $stmtP = $pdo->prepare("
     SELECT
         dt.nama_produk,
+        dt.nama_satuan,
         SUM(dt.qty * dt.konversi) AS total_qty,
         SUM(dt.subtotal)          AS total_pendapatan
     FROM detail_transaksi dt
     JOIN transaksi t ON t.id = dt.transaksi_id
     WHERE DATE(t.created_at) BETWEEN ? AND ?
-    GROUP BY dt.nama_produk
+    GROUP BY dt.nama_produk, dt.nama_satuan
     ORDER BY total_pendapatan DESC
     LIMIT 10
 ");

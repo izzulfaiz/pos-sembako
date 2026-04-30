@@ -124,8 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
   <div class="card">
-    <div class="store-name">Toko Sembako</div>
-    <div class="store-sub">Sistem Kasir — silakan login</div>
+    <div class="store-name">Toko Sembako Mujiati</div>
+    <div class="store-sub">Sistem Kasir</div>
 
     <?php if ($error): ?>
       <div class="error"><?= htmlspecialchars($error) ?></div>
