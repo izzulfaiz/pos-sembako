@@ -3,34 +3,24 @@ require_once 'includes/db.php';
 require_once 'includes/auth.php';
 
 if (isLoggedIn()) {
-    header('Location: index.php');
-    exit;
+    header('Location: index.php'); exit;
 }
 
 $error = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-
-    if ($username === '' || $password === '') {
-        $error = 'Username dan password wajib diisi.';
+    $password = $_POST['password'] ?? '';
+    $pdo = getDB();
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id']   = $user['id'];
+$_SESSION['user_nama'] = $user['nama'];
+$_SESSION['user_role'] = $user['role'];
+        header('Location: index.php'); exit;
     } else {
-        $pdo  = getDB();
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND aktif = 1 LIMIT 1");
-        $stmt->execute([$username]);
-        $user = $stmt->fetch();
-
-        if ($user && password_verify($password, $user['password'])) {
-            session_regenerate_id(true);
-            $_SESSION['user_id']   = $user['id'];
-            $_SESSION['user_nama'] = $user['nama'];
-            $_SESSION['user_role'] = $user['role'];
-            header('Location: index.php');
-            exit;
-        } else {
-            $error = 'Username atau password salah.';
-        }
+        $error = 'Username atau password salah';
     }
 }
 ?>
@@ -38,111 +28,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Login — POS Sembako</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: system-ui, sans-serif;
-      background: #f5f5f0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #1a1a18;
+      font-family: system-ui, sans-serif; background: #f5f5f0;
+      color: #1a1a18; font-size: 14px;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 16px;
     }
     .card {
-      background: #fff;
-      border: 0.5px solid #ddddd5;
-      border-radius: 14px;
-      padding: 2rem 2.5rem;
-      width: 100%;
-      max-width: 360px;
+      background: #fff; border: 0.5px solid #ddddd5;
+      border-radius: 14px; padding: 2rem 1.5rem;
+      width: 100%; max-width: 360px;
     }
-    .store-name {
-      font-size: 18px;
-      font-weight: 500;
-      margin-bottom: 4px;
+    .logo { text-align: center; margin-bottom: 1.5rem; }
+    .logo-icon {
+      width: 52px; height: 52px; background: #E1F5EE;
+      border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin: 0 auto 10px;
     }
-    .store-sub {
-      font-size: 13px;
-      color: #888780;
-      margin-bottom: 1.8rem;
+    .logo-title { font-size: 16px; font-weight: 600; }
+    .logo-sub { font-size: 12px; color: #888780; margin-top: 2px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 12px; color: #5f5e5a; margin-bottom: 4px; }
+    .form-control {
+      width: 100%; padding: 11px 14px; font-size: 15px;
+      border: 0.5px solid #ccc; border-radius: 10px;
+      background: #fafaf8; color: #1a1a18; outline: none;
     }
-    label {
-      display: block;
-      font-size: 13px;
-      color: #5f5e5a;
-      margin-bottom: 4px;
+    .form-control:focus { border-color: #1D9E75; background: #fff; }
+    .error-box {
+      background: #FCEBEB; border: 0.5px solid #F7C1C1;
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 13px; color: #791F1F; margin-bottom: 14px;
     }
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 9px 12px;
-      font-size: 14px;
-      border: 0.5px solid #ccc;
-      border-radius: 8px;
-      background: #fafaf8;
-      color: #1a1a18;
-      outline: none;
-      margin-bottom: 1rem;
-      transition: border-color 0.15s;
+    .btn-login {
+      width: 100%; padding: 13px; font-size: 15px; font-weight: 600;
+      border: none; border-radius: 10px;
+      background: #1D9E75; color: #fff; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
-    input:focus {
-      border-color: #888;
-      background: #fff;
-    }
-    .error {
-      font-size: 13px;
-      color: #a32d2d;
-      background: #fcebeb;
-      border: 0.5px solid #f09595;
-      border-radius: 8px;
-      padding: 8px 12px;
-      margin-bottom: 1rem;
-    }
-    button[type="submit"] {
-      width: 100%;
-      padding: 10px;
-      font-size: 14px;
-      font-weight: 500;
-      border: none;
-      border-radius: 8px;
-      background: #1D9E75;
-      color: #E1F5EE;
-      cursor: pointer;
-      transition: opacity 0.15s;
-    }
-    button[type="submit"]:hover { opacity: 0.88; }
-    .hint {
-      font-size: 12px;
-      color: #b4b2a9;
-      text-align: center;
-      margin-top: 1rem;
-    }
+    .btn-login:active { opacity: 0.88; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="store-name">Toko Sembako Mujiati</div>
-    <div class="store-sub">Sistem Kasir</div>
-
-    <?php if ($error): ?>
-      <div class="error"><?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
-
-    <form method="POST">
-      <label for="username">Username</label>
-      <input type="text" id="username" name="username"
-             value="<?= htmlspecialchars($_POST['username'] ?? '') ?>"
-             autocomplete="username" required>
-
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password"
-             autocomplete="current-password" required>
-
-      <button type="submit">Masuk</button>
-    </form>
-
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">🛒</div>
+    <div class="logo-title">Toko Sembako Mujiati</div>
+    <div class="logo-sub">Point of Sale</div>
+  </div>
+  <?php if ($error): ?>
+    <div class="error-box"><?= htmlspecialchars($error) ?></div>
+  <?php endif; ?>
+  <form method="POST">
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-control" type="text" name="username" autocomplete="username"
+             value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required autofocus>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-control" type="password" name="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn-login" type="submit">Masuk</button>
+  </form>
+</div>
 </body>
 </html>

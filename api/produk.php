@@ -106,12 +106,6 @@ if ($method === 'POST') {
             }
 
         } else {
-            $cek = $pdo->prepare("SELECT id FROM produk WHERE LOWER(nama) = LOWER(?) AND id != ?");
-$cek->execute([$nama, $id ?? 0]);
-if ($cek->fetch()) {
-    echo json_encode(['error' => 'Produk dengan nama ini sudah ada']);
-    exit;
-}
             // Insert produk baru
             $pdo->prepare("INSERT INTO produk (kategori_id, nama, stok, stok_minimum) VALUES (?,?,?,?)")
                 ->execute([$katId, $nama, $stok, $stokMin]);
