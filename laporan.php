@@ -143,9 +143,112 @@ $kategori = $pdo->query("SELECT * FROM kategori ORDER BY nama")->fetchAll();
     .detail-footer { margin-top: 12px; padding-top: 12px; border-top: 0.5px solid #ddddd5; }
     .detail-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
     .detail-row.bold { font-weight: 600; font-size: 15px; }
+    /* ── ANIMASI MODAL ── */
+.modal, .modal-sukses {
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── ANIMASI CARD PRODUK ── */
+.prod-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s;
+}
+.prod-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-color: #1D9E75;
+}
+
+/* ── ANIMASI TOMBOL ── */
+.btn-bayar, .btn-primary, .btn-filter, .btn-save, .btn-tambah-modal {
+  transition: transform 0.1s ease, opacity 0.15s;
+}
+.btn-bayar:active, .btn-primary:active,
+.btn-filter:active, .btn-save:active,
+.btn-tambah-modal:active { transform: scale(0.97); }
+
+/* ── ANIMASI NOTIF ── */
+.notif {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateX(-50%) translateY(-4px);
+}
+.notif.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── ANIMASI CART ITEM ── */
+.cart-item {
+  animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── ANIMASI TABEL ROW ── */
+tbody tr { transition: background 0.15s; }
+
+/* ── ANIMASI BADGE ── */
+.tab-badge:not(.hidden) {
+  animation: popIn 0.2s ease-out;
+}
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+/* ── ANIMASI METRIC CARD ── */
+.metric {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* ── LOADING SKELETON ── */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0ea 25%, #e8e8e0 50%, #f0f0ea 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+  display: block;
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
   </style>
 </head>
 <body>
+  
+<!-- MODAL KONFIRMASI HAPUS -->
+<div class="overlay" id="overlayKonfirmasi" style="z-index:200;">
+  <div class="modal" style="max-width:340px;border-radius:14px;">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="width:48px;height:48px;background:#FCEBEB;border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:22px;margin:0 auto 12px;">🗑️</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px;" id="konfirmasiJudul"></div>
+      <div style="font-size:13px;color:#5f5e5a;line-height:1.6;" id="konfirmasiPesan"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button id="btnKonfirmasiTidak"
+        style="flex:1;padding:11px;font-size:14px;border:0.5px solid #ddddd5;
+               border-radius:10px;background:none;cursor:pointer;color:#5f5e5a;">
+        Batal
+      </button>
+      <button id="btnKonfirmasiYa"
+        style="flex:1;padding:11px;font-size:14px;font-weight:600;
+               border:none;border-radius:10px;background:#A32D2D;color:#fff;cursor:pointer;">
+        Hapus
+      </button>
+    </div>
+  </div>
+</div>
 
 <nav class="navbar">
   <div class="navbar-brand">Toko Sembako Mujiati</div>
@@ -236,6 +339,7 @@ $kategori = $pdo->query("SELECT * FROM kategori ORDER BY nama")->fetchAll();
   </div>
 </div>
 
+
 <script>
 const fmt    = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtTgl = s => new Date(s).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
@@ -321,7 +425,8 @@ function renderTransaksi(data) {
       <td>${fmt(t.kembalian)}</td>
       <td style="display:flex;gap:4px;">
         <button class="btn-detail" onclick="lihatDetail(${t.id})">Detail</button>
-        <a class="btn-detail" href="nota.php?kode=${encodeURIComponent(t.kode)}">🖨️ Nota</a>
+<a class="btn-detail" href="nota.php?kode=${encodeURIComponent(t.kode)}">🖨️ Nota</a>
+<button class="btn-detail" style="border-color:#F7C1C1;color:#A32D2D;" onclick="hapusTrx(${t.id})">Hapus</button>
       </td>
     </tr>`).join('');
 
@@ -336,7 +441,8 @@ function renderTransaksi(data) {
       <div class="trx-detail">Kasir: ${t.kasir} · Kembalian: ${fmt(t.kembalian)}</div>
       <div class="trx-actions">
         <button class="btn-detail" onclick="lihatDetail(${t.id})">Detail</button>
-        <a class="btn-detail" href="nota.php?kode=${encodeURIComponent(t.kode)}">🖨️ Nota</a>
+<a class="btn-detail" href="nota.php?kode=${encodeURIComponent(t.kode)}">🖨️ Nota</a>
+<button class="btn-detail" style="border-color:#F7C1C1;color:#A32D2D;" onclick="hapusTrx(${t.id})">Hapus</button>
       </div>
     </div>`).join('');
 }
@@ -357,7 +463,49 @@ async function lihatDetail(id) {
     </tr>`).join('');
   document.getElementById('overlay').classList.add('open');
 }
+async function hapusTrx(id) {
+  // Cari data transaksi
+  const t = laporanData.transaksi.find(x => x.id === id);
+  if (!t) return;
 
+  // Tampilkan modal konfirmasi
+  const confirmed = await showKonfirmasi(
+    'Hapus Transaksi',
+    `Yakin ingin menghapus transaksi <strong>${t.kode}</strong>?<br>
+     Total: <strong>${fmt(t.total)}</strong><br><br>
+     <span style="color:#888780;font-size:12px;">Stok produk akan dikembalikan secara otomatis.</span>`
+  );
+  if (!confirmed) return;
+
+  const res  = await fetch('api/transaksi.php', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  const data = await res.json();
+  if (data.success) {
+    loadLaporan();
+  } else {
+    alert('Gagal menghapus: ' + (data.error || 'Coba lagi'));
+  }
+}
+
+function showKonfirmasi(judul, pesan) {
+  return new Promise(resolve => {
+    document.getElementById('konfirmasiJudul').textContent = judul;
+    document.getElementById('konfirmasiPesan').innerHTML   = pesan;
+    document.getElementById('overlayKonfirmasi').classList.add('open');
+
+    document.getElementById('btnKonfirmasiYa').onclick = () => {
+      document.getElementById('overlayKonfirmasi').classList.remove('open');
+      resolve(true);
+    };
+    document.getElementById('btnKonfirmasiTidak').onclick = () => {
+      document.getElementById('overlayKonfirmasi').classList.remove('open');
+      resolve(false);
+    };
+  });
+}
 function closeModal() { document.getElementById('overlay').classList.remove('open'); }
 
 function exportCSV() {

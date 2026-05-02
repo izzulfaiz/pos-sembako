@@ -101,6 +101,84 @@ $fmt = fn($n) => 'Rp ' . number_format((float)$n, 0, ',', '.');
       .nota { border: none; border-radius: 0; max-width: 100%; width: 100%; padding: 6px 2px; box-shadow: none; }
       @page { size: 80mm auto; margin: 5mm 3mm; }
     }
+    /* ── ANIMASI MODAL ── */
+.modal, .modal-sukses {
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── ANIMASI CARD PRODUK ── */
+.prod-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s;
+}
+.prod-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-color: #1D9E75;
+}
+
+/* ── ANIMASI TOMBOL ── */
+.btn-bayar, .btn-primary, .btn-filter, .btn-save, .btn-tambah-modal {
+  transition: transform 0.1s ease, opacity 0.15s;
+}
+.btn-bayar:active, .btn-primary:active,
+.btn-filter:active, .btn-save:active,
+.btn-tambah-modal:active { transform: scale(0.97); }
+
+/* ── ANIMASI NOTIF ── */
+.notif {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateX(-50%) translateY(-4px);
+}
+.notif.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── ANIMASI CART ITEM ── */
+.cart-item {
+  animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── ANIMASI TABEL ROW ── */
+tbody tr { transition: background 0.15s; }
+
+/* ── ANIMASI BADGE ── */
+.tab-badge:not(.hidden) {
+  animation: popIn 0.2s ease-out;
+}
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+/* ── ANIMASI METRIC CARD ── */
+.metric {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* ── LOADING SKELETON ── */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0ea 25%, #e8e8e0 50%, #f0f0ea 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+  display: block;
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
   </style>
 </head>
 <body>

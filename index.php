@@ -291,6 +291,84 @@ $user = currentUser();
       opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap;
     }
     .notif.show { opacity: 1; }
+    /* ── ANIMASI MODAL ── */
+.modal, .modal-sukses {
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── ANIMASI CARD PRODUK ── */
+.prod-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s;
+}
+.prod-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-color: #1D9E75;
+}
+
+/* ── ANIMASI TOMBOL ── */
+.btn-bayar, .btn-primary, .btn-filter, .btn-save, .btn-tambah-modal {
+  transition: transform 0.1s ease, opacity 0.15s;
+}
+.btn-bayar:active, .btn-primary:active,
+.btn-filter:active, .btn-save:active,
+.btn-tambah-modal:active { transform: scale(0.97); }
+
+/* ── ANIMASI NOTIF ── */
+.notif {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateX(-50%) translateY(-4px);
+}
+.notif.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── ANIMASI CART ITEM ── */
+.cart-item {
+  animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── ANIMASI TABEL ROW ── */
+tbody tr { transition: background 0.15s; }
+
+/* ── ANIMASI BADGE ── */
+.tab-badge:not(.hidden) {
+  animation: popIn 0.2s ease-out;
+}
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+/* ── ANIMASI METRIC CARD ── */
+.metric {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* ── LOADING SKELETON ── */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0ea 25%, #e8e8e0 50%, #f0f0ea 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+  display: block;
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
   </style>
 </head>
 <body>
@@ -414,6 +492,12 @@ function switchTab(tab) {
 }
 
 async function loadProduk() {
+   document.getElementById('prodGrid').innerHTML = Array(6).fill(0).map(() => `
+    <div class="prod-card">
+      <div class="skeleton" style="height:14px;width:70%;margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:11px;width:40%;margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:13px;width:55%;"></div>
+    </div>`).join('');
   const res = await fetch('api/produk.php');
   produkData = await res.json();
   renderGrid(produkData);
@@ -464,6 +548,13 @@ function closeModal() {
 function tambahDariModal() {
   if (!selectedProduk || !selectedSatuan) return;
   const namaProduk = selectedProduk.nama;
+  const terpakai = stokTerpakai(selectedProduk.id);
+const sisaStok = selectedProduk.stok - terpakai;
+if (sisaStok < parseFloat(selectedSatuan.konversi)) {
+  showNotif('Stok tidak mencukupi');
+  closeModal();
+  return;
+}
   const key = `${selectedProduk.id}_${selectedSatuan.id}`;
   const ex = cart.find(c => c.key === key);
   if (ex) { ex.qty++; }
@@ -481,7 +572,7 @@ function renderCart() {
   const cnt = document.getElementById('itemCount');
   const badge = document.getElementById('tabBadge');
   const totalQty = cart.reduce((a, c) => a + c.qty, 0);
-  cnt.textContent = totalQty + ' item';
+cnt.textContent = cart.length + ' produk · ' + totalQty + ' item';
   if (totalQty > 0) { badge.textContent = totalQty > 99 ? '99+' : totalQty; badge.classList.remove('hidden'); }
   else { badge.classList.add('hidden'); }
 
@@ -496,7 +587,9 @@ function renderCart() {
         <div class="ci-satuan">${c.nama_satuan} &times; ${c.qty}</div>
         <div class="ci-qty-wrap">
           <button class="qty-btn" onclick="ubahQty(${i},-1)">−</button>
-          <span class="ci-qty">${c.qty}</span>
+          <input class="ci-qty" type="number" min="1" value="${c.qty}"
+  onchange="ubahQtyInput(${i}, this.value)"
+  style="width:48px;text-align:center;border:0.5px solid #ccc;border-radius:6px;padding:3px;font-size:14px;font-weight:500;">
           <button class="qty-btn" onclick="ubahQty(${i},1)">+</button>
         </div>
       </div>
@@ -507,8 +600,43 @@ function renderCart() {
     </div>`).join('');
   updateTotal();
 }
+function stokTerpakai(produkId) {
+  return cart
+    .filter(c => c.produk_id === produkId)
+    .reduce((total, c) => total + (c.qty * c.konversi), 0);
+}
+function ubahQtyInput(i, val) {
+  const item = cart[i];
+  const produk = produkData.find(p => p.id === item.produk_id);
+  const stokAsli = produk ? produk.stok : 0;
+  const terpakaiTanpaIni = cart
+    .filter((c, idx) => c.produk_id === item.produk_id && idx !== i)
+    .reduce((total, c) => total + (c.qty * c.konversi), 0);
+  const maxQty = Math.floor((stokAsli - terpakaiTanpaIni) / item.konversi);
+  const qty = Math.max(1, Math.min(parseInt(val) || 1, maxQty));
+  if (parseInt(val) > maxQty) showNotif('Stok tidak mencukupi, maks ' + maxQty + ' ' + item.nama_satuan);
+  item.qty = qty;
+  renderCart();
+}
 
-function ubahQty(i, d) { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); renderCart(); }
+function ubahQty(i, d) {
+  const item = cart[i];
+  const produk = produkData.find(p => p.id === item.produk_id);
+  const stokAsli = produk ? produk.stok : 0;
+  const terpakai = stokTerpakai(item.produk_id);
+  const newQty = item.qty + d;
+
+  if (d > 0) {
+    const tambahanStok = d * item.konversi;
+    if (terpakai + tambahanStok > stokAsli) {
+      showNotif('Stok tidak mencukupi, sisa ' + Math.floor((stokAsli - terpakai) / item.konversi) + ' ' + item.nama_satuan);
+      return;
+    }
+  }
+  item.qty = newQty;
+  if (item.qty <= 0) cart.splice(i, 1);
+  renderCart();
+}
 function hapusItem(i) { cart.splice(i, 1); renderCart(); }
 function getTotal() { return cart.reduce((a, c) => a + (c.harga * c.qty), 0); }
 
